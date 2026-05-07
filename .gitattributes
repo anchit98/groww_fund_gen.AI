@@ -1,0 +1,1 @@
+models/bge-small-en/model.safetensors filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,32 @@
+{
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "chunking": {
+    "target_tokens": 420,
+    "overlap_tokens": 70,
+    "min_tokens": 40
+  },
+  "mandatory_metadata_fields": [
+    "source_url",
+    "source_domain",
+    "doc_type",
+    "scheme_name",
+    "amc_name",
+    "effective_date",
+    "ingested_at"
+  ],
+  "section_markers": [
+    "NAV:",
+    "Min. for SIP",
+    "Fund size (AUM)",
+    "Expense ratio",
+    "Rating",
+    "Fund benchmark",
+    "Investment Objective",
+    "Exit load",
+    "Risk",
+    "Tax",
+    "Lock-in",
+    "Fund Manager",
+    "Portfolio"
+  ]
+}

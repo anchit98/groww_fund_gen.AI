@@ -1,0 +1,9 @@
+{
+  "min_contract_compliance": 0.95,
+  "min_citation_correctness": 0.9,
+  "min_factual_correctness": 0.75,
+  "min_refusal_precision": 0.9,
+  "min_refusal_recall": 0.9,
+  "max_allowlist_violations": 0,
+  "max_adversarial_failures": 0
+}

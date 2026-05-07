@@ -1,0 +1,10 @@
+{
+  "vector_store": "chroma",
+  "persist_directory": "phase1_4_3/chroma_store",
+  "collection_name": "mf_scheme_chunks_v1",
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "expected_embedding_model": "bge-small-en",
+  "expected_embedding_model_revision": "pinned-local-v1",
+  "expected_embedding_source": "pre_baked",
+  "batch_size": 64
+}

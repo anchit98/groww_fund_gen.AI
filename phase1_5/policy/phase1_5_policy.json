@@ -1,0 +1,40 @@
+{
+  "schedule": {
+    "weekday_refresh_cron": "45 9 * * 1-5",
+    "timezone": "Asia/Kolkata",
+    "manual_trigger_command": "python phase1_5/scripts/run_phase1_5_checks.py ..."
+  },
+  "freshness_sla_days": 7,
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "chroma": {
+    "persist_directory": "phase1_4_3/chroma_store",
+    "collection_name": "mf_scheme_chunks_v1"
+  },
+  "smoke_tests": [
+    {
+      "name": "expense_ratio",
+      "query": "What is the expense ratio?",
+      "expected_patterns": ["expense ratio"]
+    },
+    {
+      "name": "exit_load",
+      "query": "What is the exit load?",
+      "expected_patterns": ["exit load"]
+    },
+    {
+      "name": "minimum_sip",
+      "query": "What is the minimum SIP amount?",
+      "expected_patterns": ["minimum sip", "min. for sip"]
+    },
+    {
+      "name": "riskometer",
+      "query": "What is the riskometer classification?",
+      "expected_patterns": ["risk", "riskometer"]
+    },
+    {
+      "name": "benchmark",
+      "query": "What is the benchmark index?",
+      "expected_patterns": ["benchmark", "fund benchmark"]
+    }
+  ]
+}

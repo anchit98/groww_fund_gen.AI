@@ -1,0 +1,26 @@
+{
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "request_timeout_seconds": 10,
+  "min_text_chars_for_valid_parse": 700,
+  "min_text_chars_for_low_confidence": 250,
+  "blocked_http_statuses": [401, 403, 429],
+  "retry_attempts": 1,
+  "strip_line_patterns": [
+    "^\\s*$",
+    "^Install\\s+App\\s*$",
+    "^Open\\s+Demat\\s+Account\\s*$",
+    "^Stocks$",
+    "^F&O$",
+    "^MTF$",
+    "^Mutual Funds$",
+    "^US Stocks$",
+    "^IPO$",
+    "^NFO$",
+    "^ETF$",
+    "^Intraday$",
+    "^Calculators$",
+    "^Knowledge Base$",
+    "^Search\\s+for\\s+stocks,\\s+funds\\s+and\\s+more$"
+  ],
+  "max_lines_to_keep": 1200
+}

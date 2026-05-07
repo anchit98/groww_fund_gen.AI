@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Diagonal stripe pattern for chat backdrop */
+.stripe-pattern {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 24px,
+    rgba(255, 255, 255, 0.015) 24px,
+    rgba(255, 255, 255, 0.015) 25px
+  );
+}
+
+.stripe-pattern-light {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 24px,
+    rgba(0, 0, 0, 0.025) 24px,
+    rgba(0, 0, 0, 0.025) 25px
+  );
+}
+
+/* Investment wisdom credits-style auto scroll */
+.wisdom-track {
+  will-change: transform;
+}
+
+.wisdom-track-running {
+  animation: wisdom-marquee 120s linear infinite;
+}
+
+.wisdom-track-paused {
+  animation-play-state: paused;
+}
+
+@keyframes wisdom-marquee {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}

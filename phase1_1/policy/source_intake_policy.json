@@ -1,0 +1,42 @@
+{
+  "allowed_doc_types": [
+    "factsheet",
+    "statement_download_guide",
+    "capital_gains_report_guide",
+    "other_groww_page"
+  ],
+  "allowed_source_tiers": [
+    "groww_mutual_funds_only"
+  ],
+  "domain_allowlist": {
+    "groww_mutual_funds_only": [
+      "groww.in"
+    ]
+  },
+  "blocked_path_keywords": [
+    "blog",
+    "review",
+    "compare",
+    "comparison",
+    "best",
+    "top-10",
+    "mirror",
+    "forum",
+    "reddit"
+  ],
+  "doc_type_path_hints": {
+    "factsheet": [
+      "/mutual-funds/"
+    ],
+    "statement_download_guide": [
+      "/mutual-funds/"
+    ],
+    "capital_gains_report_guide": [
+      "/mutual-funds/"
+    ],
+    "other_groww_page": [
+      "/mutual-funds/"
+    ]
+  },
+  "max_timeout_seconds": 8
+}

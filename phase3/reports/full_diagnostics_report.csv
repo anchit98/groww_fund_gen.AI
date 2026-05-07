@@ -1,0 +1,57 @@
+scheme_name,field_name,extraction_available,extracted_value_present,valid_chunk_count_for_scheme,field_marker_found_in_valid_chunks,retrieval_topk_contains_scheme,retrieval_reference_url,diagnostic_status
+Quant ELSS Tax Saver Fund,expense_ratio,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,exit_load,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,minimum_sip,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,benchmark,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,riskometer,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,nav,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,aum,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant ELSS Tax Saver Fund,rating,yes,yes,48,yes,yes,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,ok
+Quant Flexi Cap Fund,expense_ratio,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,exit_load,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,minimum_sip,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,benchmark,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,riskometer,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,nav,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,aum,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Flexi Cap Fund,rating,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,ok
+Quant Large Cap Fund,expense_ratio,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,exit_load,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,minimum_sip,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,benchmark,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,riskometer,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,nav,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,aum,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Large Cap Fund,rating,yes,yes,41,yes,yes,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,expense_ratio,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,exit_load,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,minimum_sip,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,benchmark,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,riskometer,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,nav,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,aum,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Mid Cap Fund,rating,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,expense_ratio,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,exit_load,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,minimum_sip,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,benchmark,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,riskometer,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,nav,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,aum,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Multi Cap Fund,rating,yes,yes,43,yes,yes,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,ok
+Quant Small Cap Fund,expense_ratio,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,exit_load,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,minimum_sip,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,benchmark,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,riskometer,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,nav,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,aum,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Small Cap Fund,rating,yes,yes,39,yes,yes,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,ok
+Quant Aggressive Hybrid Fund,expense_ratio,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,exit_load,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,minimum_sip,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,benchmark,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,riskometer,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,nav,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,aum,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok
+Quant Aggressive Hybrid Fund,rating,yes,yes,42,yes,yes,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,ok

@@ -1,0 +1,11 @@
+{
+  "timezone": "Asia/Kolkata",
+  "refresh_schedule_utc_cron": "15 4 * * 1-5",
+  "max_hours_since_full_refresh": 30,
+  "max_consecutive_refresh_failures": 1,
+  "max_allowlist_violations": 0,
+  "max_no_answer_rate": 0.25,
+  "max_refusal_precision_drop": 0.15,
+  "max_refusal_recall_drop": 0.15,
+  "max_factual_correctness_drop": 0.15
+}

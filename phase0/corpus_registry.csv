@@ -1,0 +1,8 @@
+record_id,amc_name,scheme_name,scheme_category,selection_status,phase0_in_scope,groww_url_count,groww_url_target_count,groww_url_mapped_count,notes
+SCH-001,Quant Mutual Fund,Quant ELSS Tax Saver Fund,ELSS,selected,yes,1,1,1,Accepted Groww mutual fund URL available.
+SCH-002,Quant Mutual Fund,Quant Flexi Cap Fund,Flexi Cap,selected,yes,1,1,1,Accepted Groww mutual fund URL available.
+SCH-003,Quant Mutual Fund,Quant Large Cap Fund,Large Cap,selected,yes,1,1,1,Accepted Groww mutual fund URL available.
+SCH-004,Quant Mutual Fund,Quant Mid Cap Fund,Mid Cap,selected,yes,1,1,1,Accepted Groww mutual fund URL available.
+SCH-005,Quant Mutual Fund,Quant Aggressive Hybrid Fund,Aggressive Hybrid,selected,yes,1,1,1,Accepted Groww mutual fund URL available.
+SCH-006,Quant Mutual Fund,Quant Multi Cap Fund,Multi Cap,reserve,no,1,1,1,Accepted Groww mutual fund URL available.
+SCH-007,Quant Mutual Fund,Quant Small Cap Fund,Small Cap,reserve,no,1,1,1,Accepted Groww mutual fund URL available.

@@ -1,0 +1,2 @@
+source_id,amc_name,scheme_name,doc_type,url,source_tier,status,retrieval_eligible,citation_eligible,notes,validation_status,errors,warnings,http_status,final_url,checked_at
+E2E-001,Quant Mutual Fund,Quant Large and Mid Cap Fund,factsheet,https://groww.in/mutual-funds/quant-large-and-mid-cap-fund-direct-growth,groww_mutual_funds_only,approved,yes,yes,Single URL end-to-end validation run.,pass,,,200,https://groww.in/mutual-funds/quant-large-and-mid-cap-fund-direct-growth,2026-05-07T07:48:49Z

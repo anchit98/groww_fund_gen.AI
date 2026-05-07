@@ -1,0 +1,74 @@
+{
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "chroma": {
+    "persist_directory": "phase1_4_3/chroma_store",
+    "collection_name": "mf_scheme_chunks_v1"
+  },
+  "embedding": {
+    "model_path": "models/bge-small-en"
+  },
+  "groq": {
+    "base_url": "https://api.groq.com/openai/v1/chat/completions",
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 0.0,
+    "max_tokens": 220
+  },
+  "retrieval": {
+    "top_k": 6
+  },
+  "contract": {
+    "max_sentences": 3,
+    "exactly_one_citation": true,
+    "footer_format": "As of YYYY-MM-DD.",
+    "timezone": "Asia/Kolkata"
+  },
+  "advisory_markers": [
+    "should i",
+    "recommend",
+    "which is better",
+    "which is safer",
+    "best fund",
+    "good fund",
+    "worth investing",
+    "tax planning",
+    "portfolio",
+    "allocate",
+    "buy or sell",
+    "avoid this fund",
+    "safer",
+    "compare",
+    "versus",
+    " vs "
+  ],
+  "interpretation_markers": [
+    "good for",
+    "better choice",
+    "recommended",
+    "you should",
+    "i suggest",
+    "safe bet",
+    "outperform"
+  ],
+  "phase3_tests": [
+    {
+      "id": "P3-FACT-001",
+      "query": "What is the expense ratio of Quant Flexi Cap Fund?"
+    },
+    {
+      "id": "P3-FACT-002",
+      "query": "What is the exit load for Quant ELSS Tax Saver Fund?"
+    },
+    {
+      "id": "P3-FACT-003",
+      "query": "What is the benchmark index for Quant Large and Mid Cap Fund?"
+    },
+    {
+      "id": "P3-ADV-001",
+      "query": "Which is safer, Quant Large Cap Fund or Quant Flexi Cap Fund?"
+    },
+    {
+      "id": "P3-ADV-002",
+      "query": "Should I invest in Quant Mid Cap Fund now?"
+    }
+  ]
+}

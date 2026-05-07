@@ -1,0 +1,9 @@
+{
+  "embedding_model": "bge-small-en",
+  "embedding_model_revision": "pinned-local-v1",
+  "embedding_source": "pre_baked",
+  "pre_baked_model_path": "models/bge-small-en",
+  "fail_precheck_if_model_missing": true,
+  "batch_size": 16,
+  "normalize_embeddings": true
+}

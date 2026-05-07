@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-05-07T12:32:07.781645+00:00",
+  "policy": {
+    "timezone": "Asia/Kolkata",
+    "refresh_schedule_utc_cron": "15 4 * * 1-5",
+    "max_hours_since_full_refresh": 30,
+    "max_consecutive_refresh_failures": 1,
+    "max_allowlist_violations": 0,
+    "max_no_answer_rate": 0.25,
+    "max_refusal_precision_drop": 0.15,
+    "max_refusal_recall_drop": 0.15,
+    "max_factual_correctness_drop": 0.15
+  },
+  "refresh_schedule_utc_cron": "15 4 * * 1-5",
+  "last_full_refresh_at": "2026-05-07T12:26:57.907593+00:00",
+  "elapsed_since_refresh_hours": 0.09,
+  "recent_refresh_failures": 0,
+  "manual_ingestion_failure_lines": 0,
+  "phase5_metrics": {
+    "contract_rate": 1.0,
+    "citation_rate": 1.0,
+    "factual_rate": 1.0,
+    "refusal_precision": 1.0,
+    "refusal_recall": 1.0,
+    "no_answer_rate": 0.0
+  },
+  "allowlist_violations": 0,
+  "source_registry_url_count": 8,
+  "source_registry_changes": {
+    "added": [],
+    "removed": []
+  },
+  "alerts": [],
+  "status": "ok"
+}

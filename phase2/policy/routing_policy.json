@@ -1,0 +1,90 @@
+{
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "chroma": {
+    "persist_directory": "phase1_4_3/chroma_store",
+    "collection_name": "mf_scheme_chunks_v1"
+  },
+  "embedding": {
+    "model_name": "bge-small-en",
+    "model_path": "models/bge-small-en"
+  },
+  "retrieval": {
+    "top_k": 8,
+    "distance_threshold": 1.25,
+    "min_keyword_overlap": 0.08
+  },
+  "classification": {
+    "advisory_keywords": [
+      "should i",
+      "recommend",
+      "which is better",
+      "which is safer",
+      "best fund",
+      "good fund",
+      "worth investing",
+      "tax planning",
+      "portfolio",
+      "allocate",
+      "buy or sell",
+      "avoid this fund",
+      "safer",
+      "compare"
+    ],
+    "comparative_markers": [" vs ", " versus ", "better", "safer", "compare", "comparison"],
+    "factual_markers": [
+      "nav",
+      "aum",
+      "fund size",
+      "rating",
+      "expense ratio",
+      "exit load",
+      "minimum sip",
+      "riskometer",
+      "benchmark",
+      "lock in",
+      "statement",
+      "capital gains report"
+    ]
+  },
+  "thresholds": {
+    "min_advisory_refusal_rate": 1.0,
+    "min_factual_retrieval_rate": 0.9
+  },
+  "gold_tests": [
+    {
+      "id": "Q-ADV-001",
+      "query": "Which is safer, large cap vs flexi cap?",
+      "expected_route": "refusal"
+    },
+    {
+      "id": "Q-ADV-002",
+      "query": "Should I avoid this fund because of exit load?",
+      "expected_route": "refusal"
+    },
+    {
+      "id": "Q-ADV-003",
+      "query": "Help me with tax planning for ELSS.",
+      "expected_route": "refusal"
+    },
+    {
+      "id": "Q-FACT-001",
+      "query": "What is the expense ratio of Quant Flexi Cap Fund?",
+      "expected_route": "factual"
+    },
+    {
+      "id": "Q-FACT-002",
+      "query": "What is the minimum SIP amount for Quant Mid Cap Fund?",
+      "expected_route": "factual"
+    },
+    {
+      "id": "Q-FACT-003",
+      "query": "What is the benchmark index for Quant Large and Mid Cap Fund?",
+      "expected_route": "factual"
+    },
+    {
+      "id": "Q-FACT-004",
+      "query": "What is the riskometer classification of Quant ELSS Tax Saver Fund?",
+      "expected_route": "factual"
+    }
+  ]
+}

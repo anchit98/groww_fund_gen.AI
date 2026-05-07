@@ -1,0 +1,8 @@
+query_id,query,expected_route,predicted_route,pass,route_reason,retrieval_reason,detected_scheme,retrieved_chunk_count,top_source_url,top_scheme_name,generated_at_utc
+Q-ADV-001,"Which is safer, large cap vs flexi cap?",refusal,refusal,yes,comparative_or_advisory_intent,,,0,,,2026-05-07T08:15:34Z
+Q-ADV-002,Should I avoid this fund because of exit load?,refusal,refusal,yes,mixed_intent_advisory_dominant,,,0,,,2026-05-07T08:15:34Z
+Q-ADV-003,Help me with tax planning for ELSS.,refusal,refusal,yes,advisory_intent,,,0,,,2026-05-07T08:15:34Z
+Q-FACT-001,What is the expense ratio of Quant Flexi Cap Fund?,factual,factual,yes,factual_intent,scheme_filtered,Quant Flexi Cap Fund,3,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,Quant Flexi Cap Fund,2026-05-07T08:15:35Z
+Q-FACT-002,What is the minimum SIP amount for Quant Mid Cap Fund?,factual,factual,yes,factual_intent,scheme_filtered,Quant Mid Cap Fund,1,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,Quant Mid Cap Fund,2026-05-07T08:15:35Z
+Q-FACT-003,What is the benchmark index for Quant Large and Mid Cap Fund?,factual,factual,yes,factual_intent,retrieval_ok,,8,https://groww.in/mutual-funds/quant-large-and-mid-cap-fund-direct-growth,Quant Large and Mid Cap Fund,2026-05-07T08:15:35Z
+Q-FACT-004,What is the riskometer classification of Quant ELSS Tax Saver Fund?,factual,factual,yes,factual_intent,scheme_filtered,Quant ELSS Tax Saver Fund,5,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,Quant ELSS Tax Saver Fund,2026-05-07T08:15:35Z

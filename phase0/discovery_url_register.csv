@@ -1,0 +1,9 @@
+record_id,scheme_name,url,source_tier,allowed_for_retrieval,allowed_for_citation,status,last_checked_date,remarks
+GROWW-001,Quant ELSS Tax Saver Fund,https://groww.in/mutual-funds/quant-elss-tax-saver-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-002,Quant Flexi Cap Fund,https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-003,Quant Large Cap Fund,https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-004,Quant Mid Cap Fund,https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-005,Quant Multi Cap Fund,https://groww.in/mutual-funds/quant-multi-cap-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-006,Quant Small Cap Fund,https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-007,Quant Aggressive Hybrid Fund,https://groww.in/mutual-funds/quant-aggressive-hybrid-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.
+GROWW-008,Quant Large And Mid Cap Fund Direct Growth,https://groww.in/mutual-funds/quant-large-and-mid-cap-fund-direct-growth,groww_mutual_funds_only,yes,yes,approved,2026-05-07,Accepted URL pattern match.

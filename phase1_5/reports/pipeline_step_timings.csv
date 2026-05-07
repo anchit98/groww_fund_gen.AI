@@ -1,0 +1,8 @@
+step_number,script,elapsed_seconds,return_code,started_at,finished_at
+1,phase1_1/scripts/validate_source_intake.py,3.088,0,2026-05-07T12:25:23.745043+00:00,2026-05-07T12:25:26.832785+00:00
+2,phase1_2/scripts/fetch_and_parse.py,4.348,0,2026-05-07T12:25:26.832798+00:00,2026-05-07T12:25:31.180641+00:00
+3,phase1_3/scripts/extract_fields.py,0.151,0,2026-05-07T12:25:31.180652+00:00,2026-05-07T12:25:31.331565+00:00
+4,phase1_4_1/scripts/build_chunks_and_metadata.py,0.141,0,2026-05-07T12:25:31.331576+00:00,2026-05-07T12:25:31.472411+00:00
+5,phase1_4_2/scripts/generate_embeddings.py,73.574,0,2026-05-07T12:25:31.472449+00:00,2026-05-07T12:26:45.046672+00:00
+6,phase1_4_3/scripts/upsert_to_chromadb.py,2.969,0,2026-05-07T12:26:45.046686+00:00,2026-05-07T12:26:48.016175+00:00
+7,phase1_5/scripts/run_phase1_5_checks.py,9.891,0,2026-05-07T12:26:48.016191+00:00,2026-05-07T12:26:57.907571+00:00

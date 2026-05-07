@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: rag-bot-backend
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: TZ
+        value: Asia/Kolkata
+      - key: GROQ_API_KEY
+        sync: false
+
+  - type: cron
+    name: rag-bot-refresh-weekdays
+    env: python
+    plan: starter
+    schedule: "15 4 * * 1-5"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python phase6/scripts/run_phase6_scheduled_refresh.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: TZ
+        value: Asia/Kolkata
+      - key: GROQ_API_KEY
+        sync: false

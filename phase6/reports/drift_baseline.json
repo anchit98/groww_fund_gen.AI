@@ -1,0 +1,11 @@
+{
+  "updated_at": "2026-05-07T12:22:53.780599+00:00",
+  "metrics": {
+    "contract_rate": 1.0,
+    "citation_rate": 1.0,
+    "factual_rate": 1.0,
+    "refusal_precision": 1.0,
+    "refusal_recall": 1.0,
+    "no_answer_rate": 0.0
+  }
+}

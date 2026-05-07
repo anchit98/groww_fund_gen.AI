@@ -1,0 +1,22 @@
+{
+  "accepted_url_regex": "^https://groww\\.in/mutual-funds/[a-z0-9-]+/?$",
+  "default_amc_name": "Quant Mutual Fund",
+  "riskometer_map": {
+    "very high": "very_high",
+    "high": "high",
+    "moderately high": "moderately_high",
+    "moderate": "moderate",
+    "low to moderate": "low_to_moderate",
+    "low": "low"
+  },
+  "numeric_bounds": {
+    "nav_min": 0.0,
+    "aum_min": 0.0,
+    "expense_ratio_min": 0.0,
+    "expense_ratio_max": 100.0,
+    "min_sip_min": 0
+  },
+  "conflict_tolerance": {
+    "decimal_places": 2
+  }
+}

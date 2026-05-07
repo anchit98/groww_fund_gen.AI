@@ -473,7 +473,13 @@ class QueryEngine:
 app = FastAPI(title="Groww Fund Gyaan Backend")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://groww-fund-genius-ai.vercel.app"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://growwfundgenai.vercel.app",
+    ],
+    # Allow Vercel preview deployments for this project.
+    allow_origin_regex=r"^https://growwfundgenai(-[a-z0-9-]+)?\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -5,6 +5,7 @@ import Logo from './Logo'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001').replace(/\/+$/, '')
 const MAX_QUERY_LENGTH = 2000
 const STATUS_REQUEST_TIMEOUT_MS = 10000
+const QUERY_REQUEST_TIMEOUT_MS = 120000
 const WELCOME_MESSAGE =
   "Hello! I'm your Groww Fund Gyaan.AI assistant. I can help you understand mutual funds, analyze performance, and clarify tax implications. How can I assist you with your investments today?"
 const FALLBACK_SUGGESTIONS = [
@@ -249,22 +250,28 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     setInput('')
     setLoading(true)
     try {
-      const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      })
+      const { res, data } = await fetchJsonWithTimeout(
+        `${API_BASE_URL}/query`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        },
+        QUERY_REQUEST_TIMEOUT_MS
+      )
       if (!res.ok) throw new Error(data.detail || 'Backend request failed')
       appendMessage({
         role: 'assistant',
         content: data.response || 'information unavailable.',
         citations: Array.isArray(data.citations) ? data.citations : [],
       })
-    } catch {
-      const msg =
-        "I'm unable to reach the backend right now. Please check that your API server is running and VITE_API_BASE_URL is configured."
+    } catch (e) {
+      const isAbort = e instanceof DOMException && e.name === 'AbortError'
+      const msg = isAbort
+        ? 'The backend is taking longer than expected (possible cold start). Please retry in a few seconds.'
+        : "I'm unable to reach the backend right now. Please check that your API server is running and VITE_API_BASE_URL is configured."
       appendMessage({ role: 'assistant', content: msg })
-      setErrorBanner('Source unavailable. Backend connection failed.')
+      setErrorBanner(isAbort ? 'Backend request timed out. Please retry.' : 'Source unavailable. Backend connection failed.')
     } finally {
       setLoading(false)
     }

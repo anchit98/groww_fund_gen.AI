@@ -90,15 +90,15 @@ def derive_scheme_name(url: str) -> str:
     return " ".join([w.upper() if w.lower() == "elss" else w.capitalize() for w in words])
 
 
-def enforce_three_sentences(text: str) -> str:
+def enforce_two_sentences(text: str) -> str:
     cleaned = re.sub(r"\s+", " ", (text or "").strip())
     if not cleaned:
         return "information unavailable."
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", cleaned) if s.strip()]
     if not sentences:
         return "information unavailable."
-    picked = sentences[:3]
-    while len(picked) < 3:
+    picked = sentences[:2]
+    while len(picked) < 2:
         picked.append(sentences[-1])
     normalized: List[str] = []
     for sentence in picked:
@@ -108,9 +108,9 @@ def enforce_three_sentences(text: str) -> str:
         if sentence[-1] not in ".!?":
             sentence += "."
         normalized.append(sentence)
-    while len(normalized) < 3:
+    while len(normalized) < 2:
         normalized.append("information unavailable.")
-    final = " ".join(normalized[:3])
+    final = " ".join(normalized[:2])
     return final
 
 
@@ -438,7 +438,7 @@ class QueryEngine:
                     "Ask me a factual question about a fund, and I will answer from available data."
                 )
                 return {"response": text, "citations": [], "status": "safety_refusal_no_llm"}
-            llm_text = enforce_three_sentences(self._call_groq_non_factual(query))
+            llm_text = enforce_two_sentences(self._call_groq_non_factual(query))
             llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
             return {"response": llm_text, "citations": [], "status": "safety_refusal_llm"}
 
@@ -466,7 +466,7 @@ class QueryEngine:
         llm_text = self._call_groq(query, contexts, citation, fact_hint=fact_hint or "")
         llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
         llm_text = reduce_redundancy(llm_text)
-        llm_text = enforce_three_sentences(llm_text)
+        llm_text = enforce_two_sentences(llm_text)
         return {"response": llm_text, "citations": [citation], "status": "success_llm"}
 
 

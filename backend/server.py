@@ -632,37 +632,6 @@ def health() -> Dict[str, Any]:
     return {"ok": True, "ingestion_running": ingestion_running()}
 
 
-@app.get("/warmup")
-def warmup() -> Dict[str, Any]:
-    started = time.time()
-    try:
-        engine_instance = get_engine()
-        init_elapsed_ms = round((time.time() - started) * 1000, 1)
-
-        # Touch retrieval path once so first real user query avoids lazy setup overhead.
-        probe_started = time.time()
-        probe_rows = engine_instance._retrieve("expense ratio")
-        probe_elapsed_ms = round((time.time() - probe_started) * 1000, 1)
-
-        return {
-            "ok": True,
-            "engine_initialized": True,
-            "retrieval_probe_count": len(probe_rows),
-            "init_elapsed_ms": init_elapsed_ms,
-            "probe_elapsed_ms": probe_elapsed_ms,
-            "total_elapsed_ms": round((time.time() - started) * 1000, 1),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-    except Exception as e:
-        return {
-            "ok": False,
-            "engine_initialized": False,
-            "error": str(e),
-            "total_elapsed_ms": round((time.time() - started) * 1000, 1),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-
 if __name__ == "__main__":
     import uvicorn
 

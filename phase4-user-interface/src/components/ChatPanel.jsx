@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Info, Link, Loader2, Send } from 'lucide-react'
 import Logo from './Logo'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001').replace(/\/+$/, '')
 const MAX_QUERY_LENGTH = 2000
-const STATUS_REQUEST_TIMEOUT_MS = 10000
-const QUERY_REQUEST_TIMEOUT_MS = 120000
+const STATUS_REQUEST_TIMEOUT_MS = 45000
+const INGEST_START_REQUEST_TIMEOUT_MS = 90000
+const QUERY_REQUEST_TIMEOUT_MS = 240000
 const WELCOME_MESSAGE =
   "Hello! I'm your Groww Fund Gyaan.AI assistant. I can help you understand mutual funds, analyze performance, and clarify tax implications. How can I assist you with your investments today?"
 const FALLBACK_SUGGESTIONS = [
@@ -126,63 +127,43 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     setErrorBanner('')
   }, [activeTabId])
 
-  useEffect(() => {
-    let active = true
-    const loadIngestedFunds = async () => {
-      try {
-        const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/ingested-funds`)
-        if (!active || !res.ok) return
-        const funds = Array.isArray(data.funds) ? data.funds : []
-        setIngestedFunds(
-          funds
-            .map((fund) => ({
-              url: typeof fund?.url === 'string' ? fund.url.trim() : '',
-              name: deriveDisplayFundName(fund?.name, typeof fund?.url === 'string' ? fund.url.trim() : ''),
-            }))
-            .filter((fund) => fund.url)
-        )
-      } catch {
-        // no-op
-      }
-    }
-    loadIngestedFunds()
-    return () => {
-      active = false
+  const refreshIngestedFunds = useCallback(async () => {
+    try {
+      const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/ingested-funds`, {}, STATUS_REQUEST_TIMEOUT_MS)
+      if (!res.ok) return
+      const funds = Array.isArray(data.funds) ? data.funds : []
+      setIngestedFunds(
+        funds
+          .map((fund) => ({
+            url: typeof fund?.url === 'string' ? fund.url.trim() : '',
+            name: deriveDisplayFundName(fund?.name, typeof fund?.url === 'string' ? fund.url.trim() : ''),
+          }))
+          .filter((fund) => fund.url)
+      )
+    } catch {
+      // no-op
     }
   }, [])
 
-  useEffect(() => {
-    let active = true
-    let timer = null
-    const pollIngestion = async () => {
-      let nextDelay = 30000
-      try {
-        const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/ingest-status`)
-        if (res.ok && active) {
-          const running = Boolean(data.running)
-          if (!running) {
-            setLocalIngestionStartedAt(null)
-            setLocalElapsedSeconds(0)
-          }
-          setIngestionStatus({
-            status: data.status || 'idle',
-            running,
-            elapsed_seconds: typeof data.elapsed_seconds === 'number' ? Math.max(0, Math.floor(data.elapsed_seconds)) : null,
-            exit_code: typeof data.exit_code === 'number' ? data.exit_code : null,
-            target_url: typeof data.target_url === 'string' && data.target_url.trim() ? data.target_url.trim() : null,
-          })
-          nextDelay = running ? 2500 : 30000
-        }
-      } catch {
-        nextDelay = 45000
-      } finally {
-        if (active) timer = setTimeout(pollIngestion, nextDelay)
+  const refreshIngestionStatus = useCallback(async () => {
+    try {
+      const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/ingest-status`, {}, STATUS_REQUEST_TIMEOUT_MS)
+      if (!res.ok) return false
+      const running = Boolean(data.running)
+      if (!running) {
+        setLocalIngestionStartedAt(null)
+        setLocalElapsedSeconds(0)
       }
-    }
-    pollIngestion()
-    return () => {
-      active = false
-      if (timer) clearTimeout(timer)
+      setIngestionStatus({
+        status: data.status || 'idle',
+        running,
+        elapsed_seconds: typeof data.elapsed_seconds === 'number' ? Math.max(0, Math.floor(data.elapsed_seconds)) : null,
+        exit_code: typeof data.exit_code === 'number' ? data.exit_code : null,
+        target_url: typeof data.target_url === 'string' && data.target_url.trim() ? data.target_url.trim() : null,
+      })
+      return running
+    } catch {
+      return false
     }
   }, [])
 
@@ -197,36 +178,52 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     return () => clearInterval(timer)
   }, [ingestionStatus.running, localIngestionStartedAt])
 
+  const refreshScrapeStatus = useCallback(async () => {
+    try {
+      const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/scrape-status`, {}, STATUS_REQUEST_TIMEOUT_MS)
+      if (!res.ok) return
+      const value =
+        typeof data.last_successful_scrape_at === 'string'
+          ? data.last_successful_scrape_at
+          : typeof data.last_updated === 'string'
+            ? data.last_updated
+            : typeof data.timestamp === 'string'
+              ? data.timestamp
+              : null
+      setLastSuccessfulScrapeAt(value)
+    } catch {
+      // no-op
+    }
+  }, [])
+
+  // Load status once on page load (no continuous background polling).
   useEffect(() => {
+    refreshIngestedFunds()
+    refreshIngestionStatus()
+    refreshScrapeStatus()
+  }, [refreshIngestedFunds, refreshIngestionStatus, refreshScrapeStatus])
+
+  // Poll ingestion status only while a manual ingestion is running.
+  useEffect(() => {
+    if (!ingestionStatus.running) return
     let active = true
     let timer = null
-    const pollScrapeStatus = async () => {
-      let nextDelay = 60000
-      try {
-        const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/scrape-status`)
-        if (res.ok && active) {
-          const value =
-            typeof data.last_successful_scrape_at === 'string'
-              ? data.last_successful_scrape_at
-              : typeof data.last_updated === 'string'
-                ? data.last_updated
-                : typeof data.timestamp === 'string'
-                  ? data.timestamp
-                  : null
-          setLastSuccessfulScrapeAt(value)
-        }
-      } catch {
-        nextDelay = 90000
-      } finally {
-        if (active) timer = setTimeout(pollScrapeStatus, nextDelay)
+    const pollWhileRunning = async () => {
+      const running = await refreshIngestionStatus()
+      if (!active) return
+      if (running) {
+        timer = setTimeout(pollWhileRunning, 2500)
+        return
       }
+      refreshIngestedFunds()
+      refreshScrapeStatus()
     }
-    pollScrapeStatus()
+    pollWhileRunning()
     return () => {
       active = false
       if (timer) clearTimeout(timer)
     }
-  }, [])
+  }, [ingestionStatus.running, refreshIngestedFunds, refreshIngestionStatus, refreshScrapeStatus])
 
   const appendMessage = (msg) => {
     setChatTabs((tabs) =>
@@ -268,7 +265,7 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     } catch (e) {
       const isAbort = e instanceof DOMException && e.name === 'AbortError'
       const msg = isAbort
-        ? 'The backend is taking longer than expected (possible cold start). Please retry in a few seconds.'
+        ? 'The backend is taking longer than expected (possible cold start or model warm-up). Please retry in a few seconds.'
         : "I'm unable to reach the backend right now. Please check that your API server is running and VITE_API_BASE_URL is configured."
       appendMessage({ role: 'assistant', content: msg })
       setErrorBanner(isAbort ? 'Backend request timed out. Please retry.' : 'Source unavailable. Backend connection failed.')
@@ -290,11 +287,15 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     setIngestingUrl(true)
     setErrorBanner('')
     try {
-      const { res, data } = await fetchJsonWithTimeout(`${API_BASE_URL}/ingest-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      })
+      const { res, data } = await fetchJsonWithTimeout(
+        `${API_BASE_URL}/ingest-url`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        },
+        INGEST_START_REQUEST_TIMEOUT_MS
+      )
       if (!res.ok) throw new Error(data.detail || 'Failed to start ingestion')
       appendMessage({ role: 'assistant', content: data.message || 'Ingestion started.' })
       setFundUrlInput('')
@@ -324,7 +325,12 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
         })
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Could not start ingestion.'
+      const isAbort = e instanceof DOMException && e.name === 'AbortError'
+      const msg = isAbort
+        ? 'Starting ingestion is taking longer than expected (possible cold start). Please retry.'
+        : e instanceof Error
+          ? e.message
+          : 'Could not start ingestion.'
       appendMessage({ role: 'assistant', content: msg })
       setErrorBanner(msg)
     } finally {
@@ -481,7 +487,15 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
           <div className="flex items-center gap-2 bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 rounded-full pl-2 pr-2 py-2 shadow-sm focus-within:border-teal-accent/60 transition-colors">
             <button
               type="button"
-              onClick={() => setShowIngestBox((v) => !v)}
+              onClick={() => {
+                const next = !showIngestBox
+                setShowIngestBox(next)
+                if (next) {
+                  refreshIngestedFunds()
+                  refreshIngestionStatus()
+                  refreshScrapeStatus()
+                }
+              }}
               className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-400 text-amber-950 hover:bg-amber-300 transition-colors shadow-sm"
               aria-label={showIngestBox ? 'Hide ingest URL box' : 'Show ingest URL box'}
               title={showIngestBox ? 'Hide ingest URL box' : 'Show ingest URL box'}

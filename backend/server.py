@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -222,26 +223,35 @@ class QueryEngine:
         self.client = None
         self.collection = None
         self.model = None
-        self.retrieval_ready = False
         self.retrieval_error: Optional[str] = None
+        chroma_dir = PROJECT_ROOT / self.policy["chroma"]["persist_directory"]
         try:
-            chroma_dir = PROJECT_ROOT / self.policy["chroma"]["persist_directory"]
             self.client = chromadb.PersistentClient(path=str(chroma_dir))
             self.collection = self.client.get_collection(self.policy["chroma"]["collection_name"])
-            model_path = PROJECT_ROOT / self.policy["embedding"]["model_path"]
-            self.model = SentenceTransformer(str(model_path))
-            self.retrieval_ready = True
         except Exception as e:
-            self.retrieval_error = str(e)
-            print(
-                json.dumps(
-                    {
-                        "event": "retrieval_init_failed",
-                        "error": self.retrieval_error,
-                    },
-                    ensure_ascii=True,
-                )
-            )
+            self.retrieval_error = f"chroma_init_failed: {e}"
+            # Self-heal corrupted/incompatible Chroma metadata by rebuilding from upserted chunks.
+            if self._attempt_chroma_rebuild(chroma_dir):
+                try:
+                    self.client = chromadb.PersistentClient(path=str(chroma_dir))
+                    self.collection = self.client.get_collection(self.policy["chroma"]["collection_name"])
+                    self.retrieval_error = None
+                except Exception as e_retry:
+                    self.retrieval_error = (
+                        f"{self.retrieval_error}; chroma_retry_failed: {e_retry}"
+                        if self.retrieval_error
+                        else f"chroma_retry_failed: {e_retry}"
+                    )
+        model_path = PROJECT_ROOT / self.policy["embedding"]["model_path"]
+        try:
+            self.model = SentenceTransformer(str(model_path))
+        except Exception as e_local:
+            # Fallback to HF model id when local model artifacts are unavailable on cloud runtime.
+            try:
+                self.model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+            except Exception as e_remote:
+                err = f"embedding_model_failed: local={e_local}; remote={e_remote}"
+                self.retrieval_error = f"{self.retrieval_error}; {err}" if self.retrieval_error else err
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.facts = self._load_facts()
 
@@ -259,6 +269,73 @@ class QueryEngine:
     def _category_tokens(self, tokens: set[str]) -> set[str]:
         categories = {"large", "mid", "small", "flexi", "multi", "elss", "hybrid", "aggressive"}
         return tokens & categories
+
+    def _attempt_chroma_rebuild(self, chroma_dir: Path) -> bool:
+        source_path = PROJECT_ROOT / "phase1_4_3" / "reports" / "upserted_chunks.jsonl"
+        if not source_path.exists():
+            return False
+        backup_dir = chroma_dir.with_name(f"{chroma_dir.name}_backup_{int(time.time())}")
+        try:
+            if chroma_dir.exists():
+                shutil.move(str(chroma_dir), str(backup_dir))
+            chroma_dir.mkdir(parents=True, exist_ok=True)
+            rebuilt_client = chromadb.PersistentClient(path=str(chroma_dir))
+            rebuilt_collection = rebuilt_client.get_or_create_collection(self.policy["chroma"]["collection_name"])
+            self._bulk_load_upserted_chunks(rebuilt_collection, source_path)
+            return True
+        except Exception:
+            return False
+
+    def _bulk_load_upserted_chunks(self, collection: Any, source_path: Path) -> None:
+        batch_size = 64
+        ids: List[str] = []
+        docs: List[str] = []
+        embs: List[List[float]] = []
+        metas: List[Dict[str, Any]] = []
+
+        def flush() -> None:
+            if not ids:
+                return
+            collection.upsert(ids=ids, documents=docs, embeddings=embs, metadatas=metas)
+            ids.clear()
+            docs.clear()
+            embs.clear()
+            metas.clear()
+
+        with source_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                raw = line.strip()
+                if not raw:
+                    continue
+                row = json.loads(raw)
+                chunk_id = str(row.get("chunk_id", "")).strip()
+                chunk_text = str(row.get("chunk_text", "")).strip()
+                embedding = row.get("embedding")
+                source_url = str(row.get("source_url", "")).strip()
+                if not chunk_id or not chunk_text or not isinstance(embedding, list) or not source_url:
+                    continue
+                ids.append(chunk_id)
+                docs.append(chunk_text)
+                embs.append(embedding)
+                metas.append(
+                    {
+                        "source_id": str(row.get("source_id", "") or ""),
+                        "source_url": source_url,
+                        "source_domain": str(row.get("source_domain", "") or ""),
+                        "doc_type": str(row.get("doc_type", "") or ""),
+                        "scheme_name": str(row.get("scheme_name", "") or ""),
+                        "amc_name": str(row.get("amc_name", "") or ""),
+                        "effective_date": str(row.get("effective_date", "") or ""),
+                        "ingested_at": str(row.get("ingested_at", "") or ""),
+                        "embedding_model": str(row.get("embedding_model", "") or ""),
+                        "embedding_model_revision": str(row.get("embedding_model_revision", "") or ""),
+                        "embedding_source": str(row.get("embedding_source", "") or ""),
+                        "vector_store": "chroma",
+                    }
+                )
+                if len(ids) >= batch_size:
+                    flush()
+        flush()
 
     def _load_facts(self) -> Dict[str, Dict[str, Any]]:
         rows: Dict[str, Dict[str, Any]] = {}
@@ -376,7 +453,7 @@ class QueryEngine:
         return None
 
     def _retrieve(self, query: str) -> List[Dict[str, Any]]:
-        if not self.retrieval_ready or self.model is None or self.collection is None:
+        if self.model is None or self.collection is None:
             return []
         emb = self.model.encode([query], normalize_embeddings=True).tolist()
         result = self.collection.query(query_embeddings=emb, n_results=int(self.policy["retrieval"]["top_k"]), include=["documents", "metadatas"])
@@ -449,13 +526,22 @@ class QueryEngine:
         trace_id = f"q-{int(time.time() * 1000)}"
         total_start = time.perf_counter()
         retrieve_ms = 0.0
+        scheme_extract_ms = 0.0
+        field_extract_ms = 0.0
+        fact_hint_ms = 0.0
+        llm_call_ms = 0.0
+        postprocess_ms = 0.0
         llm_ms = 0.0
         mode = "factual"
         status = "unknown"
         advisory = any(m in query.lower() for m in self.policy.get("advisory_markers", []))
         unsafe_non_factual = self._is_unsafe_non_factual(query)
         retrieve_start = time.perf_counter()
-        contexts = self._retrieve(query)
+        try:
+            contexts = self._retrieve(query)
+        except Exception as e:
+            contexts = []
+            self.retrieval_error = f"retrieve_failed: {e}"
         retrieve_ms = (time.perf_counter() - retrieve_start) * 1000
         citation = contexts[0]["source_url"] if contexts else "https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth"
         if advisory or unsafe_non_factual:
@@ -477,6 +563,11 @@ class QueryEngine:
                             "mode": mode,
                             "status": status,
                             "retrieve_ms": round(retrieve_ms, 1),
+                            "scheme_extract_ms": round(scheme_extract_ms, 1),
+                            "field_extract_ms": round(field_extract_ms, 1),
+                            "fact_hint_ms": round(fact_hint_ms, 1),
+                            "llm_call_ms": round(llm_call_ms, 1),
+                            "postprocess_ms": round(postprocess_ms, 1),
                             "llm_ms": round(llm_ms, 1),
                             "total_ms": round(total_ms, 1),
                             "contexts": len(contexts),
@@ -486,10 +577,23 @@ class QueryEngine:
                 )
                 return result
             llm_start = time.perf_counter()
-            llm_text = enforce_two_sentences(self._call_groq_non_factual(query))
+            try:
+                llm_call_start = time.perf_counter()
+                raw = self._call_groq_non_factual(query)
+                llm_call_ms = (time.perf_counter() - llm_call_start) * 1000
+                post_start = time.perf_counter()
+                llm_text = enforce_two_sentences(raw)
+                llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
+                postprocess_ms = (time.perf_counter() - post_start) * 1000
+            except Exception:
+                llm_text = (
+                    "I can only help with factual mutual fund information right now. "
+                    "Please ask for specific fund facts like expense ratio, exit load, NAV, benchmark, or riskometer."
+                )
+                status = "safety_refusal_llm_fallback"
             llm_ms = (time.perf_counter() - llm_start) * 1000
-            llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
-            status = "safety_refusal_llm"
+            if status == "unknown":
+                status = "safety_refusal_llm"
             result = {"response": llm_text, "citations": [], "status": status}
             total_ms = (time.perf_counter() - total_start) * 1000
             print(
@@ -500,6 +604,11 @@ class QueryEngine:
                         "mode": mode,
                         "status": status,
                         "retrieve_ms": round(retrieve_ms, 1),
+                        "scheme_extract_ms": round(scheme_extract_ms, 1),
+                        "field_extract_ms": round(field_extract_ms, 1),
+                        "fact_hint_ms": round(fact_hint_ms, 1),
+                        "llm_call_ms": round(llm_call_ms, 1),
+                        "postprocess_ms": round(postprocess_ms, 1),
                         "llm_ms": round(llm_ms, 1),
                         "total_ms": round(total_ms, 1),
                         "contexts": len(contexts),
@@ -509,10 +618,15 @@ class QueryEngine:
             )
             return result
 
+        scheme_start = time.perf_counter()
         scheme = self._extract_scheme(query)
+        scheme_extract_ms = (time.perf_counter() - scheme_start) * 1000
+        fields_start = time.perf_counter()
         fields = self._extract_fields(query)
+        field_extract_ms = (time.perf_counter() - fields_start) * 1000
         fact_hints: List[str] = []
         fact_row = self.facts.get(scheme, {}) if scheme else {}
+        fact_start = time.perf_counter()
         if scheme and fields:
             seen = set()
             for field in fields:
@@ -522,6 +636,7 @@ class QueryEngine:
                 hint = self._fact_answer(scheme, field)
                 if hint:
                     fact_hints.append(hint)
+        fact_hint_ms = (time.perf_counter() - fact_start) * 1000
         fact_hint = "\n".join(f"- {h}" for h in fact_hints)
         if fact_row.get("source_url"):
             citation = str(fact_row["source_url"])
@@ -540,6 +655,11 @@ class QueryEngine:
                         "mode": mode,
                         "status": status,
                         "retrieve_ms": round(retrieve_ms, 1),
+                        "scheme_extract_ms": round(scheme_extract_ms, 1),
+                        "field_extract_ms": round(field_extract_ms, 1),
+                        "fact_hint_ms": round(fact_hint_ms, 1),
+                        "llm_call_ms": round(llm_call_ms, 1),
+                        "postprocess_ms": round(postprocess_ms, 1),
                         "llm_ms": round(llm_ms, 1),
                         "total_ms": round(total_ms, 1),
                         "contexts": len(contexts),
@@ -549,12 +669,24 @@ class QueryEngine:
             )
             return result
         llm_start = time.perf_counter()
-        llm_text = self._call_groq(query, contexts, citation, fact_hint=fact_hint or "")
+        try:
+            llm_call_start = time.perf_counter()
+            llm_text = self._call_groq(query, contexts, citation, fact_hint=fact_hint or "")
+            llm_call_ms = (time.perf_counter() - llm_call_start) * 1000
+            post_start = time.perf_counter()
+            llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
+            llm_text = reduce_redundancy(llm_text)
+            llm_text = enforce_two_sentences(llm_text)
+            postprocess_ms = (time.perf_counter() - post_start) * 1000
+            status = "success_llm"
+        except Exception:
+            status = "llm_error_fallback"
+            if fact_hints:
+                merged = " ".join(h.strip() for h in fact_hints if h.strip())
+                llm_text = enforce_two_sentences(merged or "information unavailable.")
+            else:
+                llm_text = "information unavailable."
         llm_ms = (time.perf_counter() - llm_start) * 1000
-        llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
-        llm_text = reduce_redundancy(llm_text)
-        llm_text = enforce_two_sentences(llm_text)
-        status = "success_llm"
         result = {"response": llm_text, "citations": [citation], "status": status}
         total_ms = (time.perf_counter() - total_start) * 1000
         print(
@@ -565,6 +697,11 @@ class QueryEngine:
                     "mode": mode,
                     "status": status,
                     "retrieve_ms": round(retrieve_ms, 1),
+                    "scheme_extract_ms": round(scheme_extract_ms, 1),
+                    "field_extract_ms": round(field_extract_ms, 1),
+                    "fact_hint_ms": round(fact_hint_ms, 1),
+                    "llm_call_ms": round(llm_call_ms, 1),
+                    "postprocess_ms": round(postprocess_ms, 1),
                     "llm_ms": round(llm_ms, 1),
                     "total_ms": round(total_ms, 1),
                     "contexts": len(contexts),
@@ -666,22 +803,14 @@ def query(req: QueryRequest) -> Dict[str, Any]:
     if ingestion_running():
         return {"response": "Data refresh is currently running. Please try again in a minute.", "citations": [], "status": "ingestion_in_progress"}
     try:
-        result = get_engine().answer(req.query)
-        engine_ref = get_engine()
-        if getattr(engine_ref, "retrieval_error", None) and "status" in result:
-            result["status"] = f"{result['status']}_retrieval_degraded"
-        return result
+        return get_engine().answer(req.query)
     except Exception as e:
-        print(
-            json.dumps(
-                {
-                    "event": "query_error",
-                    "error": str(e),
-                },
-                ensure_ascii=True,
-            )
-        )
-        raise HTTPException(status_code=500, detail=f"query_failed: {str(e)}")
+        return {
+            "response": "information unavailable.",
+            "citations": [],
+            "status": "query_runtime_error",
+            "error": str(e)[:180],
+        }
 
 
 @app.post("/ingest-url")

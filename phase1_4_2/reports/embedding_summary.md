@@ -1,6 +1,6 @@
 # Phase 1.4.2 Embedding Summary
 
-- Generated at (UTC): 2026-05-07T12:26:44Z
+- Generated at (UTC): 2026-05-08T13:00:37Z
 - Precheck status: ok
 - Pre-baked model path: `models\bge-small-en`
 - Total chunks: 339

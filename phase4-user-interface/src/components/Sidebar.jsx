@@ -98,7 +98,7 @@ const wisdomItems = [
 
 const Sidebar = () => {
   return (
-    <aside className="w-[280px] shrink-0 border-r border-slate-200 dark:border-ink-800/60 bg-white dark:bg-ink-950 flex flex-col">
+    <aside className="hidden lg:flex w-[280px] shrink-0 border-r border-slate-200 dark:border-ink-800/60 bg-white dark:bg-ink-950 flex-col">
       <div className="h-[54px] px-5 flex items-center justify-center border-b border-slate-200 dark:border-ink-800/60 bg-white dark:bg-ink-950">
         <span className="text-[12.5px] font-extrabold tracking-[0.18em] text-slate-800 dark:text-slate-200 uppercase text-center">
           Investment Wisdom

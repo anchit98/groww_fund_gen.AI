@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Info, Loader2, Send } from 'lucide-react'
+import { Info, Loader2, Plus, Send, X } from 'lucide-react'
 import Logo from './Logo'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001').replace(/\/+$/, '')
@@ -8,11 +8,12 @@ const STATUS_REQUEST_TIMEOUT_MS = 45000
 const INGEST_START_REQUEST_TIMEOUT_MS = 90000
 const QUERY_REQUEST_TIMEOUT_MS = 240000
 const WELCOME_MESSAGE =
-  "Hello! I'm your Groww Fund Gyaan.AI assistant. I can help you understand mutual funds, analyze performance, and clarify tax implications. How can I assist you with your investments today?"
+  "Hello! I'm your Groww Fund Gyaan.AI assistant. I provide facts-only answers from ingested Groww mutual fund pages, including metrics like NAV, AUM, expense ratio, exit load, benchmark, and riskometer. Ask me a fund-specific factual question and I’ll help."
 const FALLBACK_SUGGESTIONS = [
   'What is the benchmark index for Quant ELSS Tax Saver Fund?',
   'What is the expense ratio of Quant Flexi Cap Fund?',
 ]
+const LOADING_STAGES = ['Thinking...', 'Searching...', 'Retrieving...', 'Responding...']
 
 const fetchJsonWithTimeout = async (url, options = {}, timeoutMs = STATUS_REQUEST_TIMEOUT_MS) => {
   const controller = new AbortController()
@@ -77,7 +78,7 @@ const deriveDisplayFundName = (name, url) => {
   return 'Unknown Scheme'
 }
 
-const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
+const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId, setActiveTabId, onCreateTab, onCloseTab }) => {
   const [input, setInput] = useState('')
   const [fundUrlInput, setFundUrlInput] = useState('')
   const [showIngestBox, setShowIngestBox] = useState(false)
@@ -86,10 +87,13 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
   const [warning, setWarning] = useState('')
   const [errorBanner, setErrorBanner] = useState('')
   const [suggestions, setSuggestions] = useState(FALLBACK_SUGGESTIONS)
+  const [loadingStageIndex, setLoadingStageIndex] = useState(0)
   const [ingestedFunds, setIngestedFunds] = useState([])
   const [lastSuccessfulScrapeAt, setLastSuccessfulScrapeAt] = useState(null)
   const [localIngestionStartedAt, setLocalIngestionStartedAt] = useState(null)
   const [localElapsedSeconds, setLocalElapsedSeconds] = useState(0)
+  const [showFundsPopoverIngest, setShowFundsPopoverIngest] = useState(false)
+  const [showFundsPopoverInput, setShowFundsPopoverInput] = useState(false)
   const [ingestionStatus, setIngestionStatus] = useState({
     status: 'idle',
     running: false,
@@ -98,6 +102,8 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
     target_url: null,
   })
   const scrollRef = useRef(null)
+  const ingestPopoverRef = useRef(null)
+  const inputPopoverRef = useRef(null)
 
   const activeTab = chatTabs.find((tab) => tab.id === activeTabId) || chatTabs[0]
   const messages = activeTab?.messages || []
@@ -120,6 +126,32 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStageIndex(0)
+      return
+    }
+    setLoadingStageIndex(0)
+    const timer = setInterval(() => {
+      setLoadingStageIndex((prev) => (prev + 1) % LOADING_STAGES.length)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [loading])
+
+  useEffect(() => {
+    const onDocumentPointerDown = (event) => {
+      const target = event.target
+      if (ingestPopoverRef.current && !ingestPopoverRef.current.contains(target)) {
+        setShowFundsPopoverIngest(false)
+      }
+      if (inputPopoverRef.current && !inputPopoverRef.current.contains(target)) {
+        setShowFundsPopoverInput(false)
+      }
+    }
+    document.addEventListener('pointerdown', onDocumentPointerDown)
+    return () => document.removeEventListener('pointerdown', onDocumentPointerDown)
+  }, [])
 
   useEffect(() => {
     setInput('')
@@ -380,20 +412,71 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
 
   return (
     <main className="flex-1 min-h-0 flex flex-col bg-slate-50 dark:bg-ink-950 min-w-0">
-      <div className="sticky top-0 z-10 border-b border-amber-200 dark:border-amber-900/30 bg-amber-50/95 dark:bg-amber-950/40 backdrop-blur px-6 py-2">
+      <div className="sm:hidden px-3 py-2 border-b border-slate-200 dark:border-ink-800/60 bg-white dark:bg-ink-950">
+        <div className="flex items-center gap-1.5 overflow-x-auto min-w-0 pb-0.5">
+          {chatTabs.map((tab) => {
+            const active = tab.id === activeTabId
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTabId(tab.id)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors whitespace-nowrap ${
+                  active
+                    ? 'bg-slate-900 text-white dark:bg-teal-accent dark:text-ink-950 border-slate-900 dark:border-teal-accent'
+                    : 'bg-white dark:bg-ink-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-ink-700 hover:border-teal-accent/50'
+                }`}
+              >
+                <span>{tab.title}</span>
+                {chatTabs.length > 1 && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCloseTab(tab.id)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onCloseTab(tab.id)
+                      }
+                    }}
+                    className="opacity-80 hover:opacity-100"
+                    aria-label={`Close ${tab.title}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                )}
+              </button>
+            )
+          })}
+          <button
+            type="button"
+            onClick={onCreateTab}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full text-ink-950 bg-teal-accent hover:bg-teal-400 transition-colors shrink-0"
+            aria-label="Add new chat tab"
+            title="Add new chat tab"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="sticky top-0 z-10 border-b border-amber-200 dark:border-amber-900/30 bg-amber-50/95 dark:bg-amber-950/40 backdrop-blur px-3 sm:px-6 py-2">
         <p className="text-[11.5px] text-amber-800 dark:text-amber-200 text-center">
           Disclaimer: Facts-only assistant for Groww mutual fund pages. No investment advice.
         </p>
       </div>
 
       {errorBanner && (
-        <div className="border-b border-rose-200 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-950/30 px-6 py-2">
+        <div className="border-b border-rose-200 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-950/30 px-3 sm:px-6 py-2">
           <p className="text-[11.5px] text-rose-700 dark:text-rose-300 text-center">{errorBanner}</p>
         </div>
       )}
 
       <div ref={scrollRef} className={`flex-1 min-h-0 overflow-y-auto ${isDarkMode ? 'stripe-pattern' : 'stripe-pattern-light'}`}>
-        <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 sm:space-y-6">
           {messages.map((msg, idx) => (
             <Message key={idx} msg={msg} />
           ))}
@@ -403,13 +486,13 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
               <Logo size={36} />
               <div className="px-4 py-3 rounded-2xl bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-teal-accent" />
-                <span className="text-sm text-slate-500 dark:text-slate-400">Thinking...</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{LOADING_STAGES[loadingStageIndex]}</span>
               </div>
             </div>
           )}
 
           {showExamples && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+            <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
               {suggestions.map((q) => (
                 <button
                   key={q}
@@ -424,27 +507,35 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
         </div>
       </div>
 
-      <div className="px-6 pt-3 pb-5 bg-slate-50 dark:bg-ink-950">
+      <div className="px-3 sm:px-6 pt-3 pb-4 sm:pb-5 bg-slate-50 dark:bg-ink-950">
         <div className="max-w-3xl mx-auto">
           {showIngestBox && (
             <div className="mb-3 p-3 rounded-xl bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60">
-              <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Add Groww mutual fund URL</p>
-                <div className="relative flex items-center gap-2 group">
+                <div ref={ingestPopoverRef} className="relative flex items-center gap-2">
                   <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${statusStyles[ingestionStatus.status] || statusStyles.idle}`}>
                     {statusLabel}
                     {runningTimerLabel ? ` (${runningTimerLabel})` : ''}
                   </span>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-slate-200 dark:border-ink-700/60 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:border-teal-accent/50 hover:text-slate-800 dark:hover:text-slate-100 transition-colors"
+                    onClick={() => setShowFundsPopoverIngest((prev) => !prev)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-yellow-300 dark:border-yellow-700/60 bg-yellow-400 dark:bg-yellow-500 text-[11px] font-semibold text-ink-950 hover:bg-yellow-300 dark:hover:bg-yellow-400 transition-colors"
                     aria-label="Show ingested funds"
+                    aria-expanded={showFundsPopoverIngest}
                     title="Show ingested funds"
                   >
                     <Info className="w-3.5 h-3.5" />
                     {uniqueIngestedFunds.length}
                   </button>
-                  <div className="pointer-events-none absolute right-0 bottom-[calc(100%+8px)] z-20 w-72 p-3 rounded-xl bg-white dark:bg-ink-900 border border-slate-200 dark:border-ink-700/60 shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto">
+                  <div
+                    className={`absolute right-0 bottom-[calc(100%+8px)] z-20 w-[calc(100vw-3rem)] max-w-72 p-3 rounded-xl bg-white dark:bg-ink-900 border border-slate-200 dark:border-ink-700/60 shadow-lg transition-all duration-150 ${
+                      showFundsPopoverIngest
+                        ? 'opacity-100 translate-y-0 pointer-events-auto'
+                        : 'opacity-0 translate-y-1 pointer-events-none'
+                    }`}
+                  >
                     <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-100 mb-2">
                       Ingested Funds ({uniqueIngestedFunds.length})
                     </p>
@@ -462,21 +553,21 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="url"
                   value={fundUrlInput}
                   onChange={(e) => setFundUrlInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddFundUrl()}
                   placeholder="https://groww.in/mutual-funds/<scheme-slug>"
-                  className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-2 py-2 rounded-lg border border-slate-200 dark:border-ink-700/60"
+                  className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-2 py-2 rounded-lg border border-slate-200 dark:border-ink-700/60 min-w-0"
                   disabled={ingestionStatus.running}
                 />
                 <button
                   type="button"
                   onClick={handleAddFundUrl}
                   disabled={!fundUrlInput.trim() || ingestingUrl || ingestionStatus.running}
-                  className="px-3 py-2 rounded-lg text-xs font-semibold bg-teal-accent hover:bg-teal-400 disabled:opacity-50 text-ink-950 transition-colors"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold bg-teal-accent hover:bg-teal-400 disabled:opacity-50 text-ink-950 transition-colors sm:w-auto w-full"
                 >
                   {ingestingUrl ? 'Adding...' : 'Add URL'}
                 </button>
@@ -484,17 +575,25 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
             </div>
           )}
 
-          <div className="flex items-center gap-2 bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 rounded-full pl-2 pr-2 py-2 shadow-sm focus-within:border-teal-accent/60 transition-colors">
-            <div className="relative flex items-center group shrink-0">
+          <div className="flex items-center gap-2 bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 rounded-2xl sm:rounded-full pl-2 pr-2 py-2 shadow-sm focus-within:border-teal-accent/60 transition-colors">
+            <div ref={inputPopoverRef} className="relative flex items-center shrink-0">
               <button
                 type="button"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-ink-700/60 text-slate-600 dark:text-slate-300 hover:border-teal-accent/50 hover:text-slate-800 dark:hover:text-slate-100 transition-colors"
+                onClick={() => setShowFundsPopoverInput((prev) => !prev)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-yellow-300 dark:border-yellow-700/60 bg-yellow-400 dark:bg-yellow-500 text-ink-950 hover:bg-yellow-300 dark:hover:bg-yellow-400 transition-colors"
                 aria-label="Show ingested funds"
+                aria-expanded={showFundsPopoverInput}
                 title="Show ingested funds"
               >
                 <Info className="w-3.5 h-3.5" />
               </button>
-              <div className="pointer-events-none absolute left-0 bottom-[calc(100%+8px)] z-20 w-72 p-3 rounded-xl bg-white dark:bg-ink-900 border border-slate-200 dark:border-ink-700/60 shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto">
+              <div
+                className={`absolute left-0 bottom-[calc(100%+8px)] z-20 w-[calc(100vw-3rem)] max-w-72 p-3 rounded-xl bg-white dark:bg-ink-900 border border-slate-200 dark:border-ink-700/60 shadow-lg transition-all duration-150 ${
+                  showFundsPopoverInput
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : 'opacity-0 translate-y-1 pointer-events-none'
+                }`}
+              >
                 <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-100 mb-2">
                   Ingested Funds ({uniqueIngestedFunds.length})
                 </p>
@@ -525,7 +624,7 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
               }}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Ask factual questions about ingested mutual funds..."
-              className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-1"
+              className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-1 min-w-0"
             />
             <button
               onClick={() => sendMessage()}
@@ -604,7 +703,7 @@ const Message = ({ msg }) => {
         <div className="shrink-0 mt-0.5">
           <Logo size={36} />
         </div>
-        <div className="flex-1 max-w-[85%]">
+        <div className="flex-1 max-w-[92%] sm:max-w-[85%]">
           <div className="px-4 py-3 rounded-2xl bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 text-[13.5px] leading-relaxed text-slate-700 dark:text-slate-200">
             <p className="whitespace-pre-wrap">{msg.content}</p>
             {linkItems.length > 0 && (
@@ -632,7 +731,7 @@ const Message = ({ msg }) => {
 
   return (
     <div className="flex justify-end">
-      <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-teal-accent text-ink-950 text-[13.5px] leading-relaxed font-medium">
+      <div className="max-w-[90%] sm:max-w-[80%] px-4 py-3 rounded-2xl bg-teal-accent text-ink-950 text-[13.5px] leading-relaxed font-medium">
         {msg.content}
       </div>
     </div>

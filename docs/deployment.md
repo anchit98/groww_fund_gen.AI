@@ -7,7 +7,7 @@
 - Build command:
 
 ```bash
-pip install -r requirements.txt
+pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 - Start command:
@@ -19,6 +19,7 @@ uvicorn backend.server:app --host 0.0.0.0 --port $PORT
 - Required environment variables:
   - `GROQ_API_KEY` (secret)
   - `TZ=Asia/Kolkata`
+  - `CUDA_VISIBLE_DEVICES=` (empty; optional safety on CPU-only runtime)
 
 ## Scheduled Refresh (Render Cron)
 
@@ -27,7 +28,7 @@ uvicorn backend.server:app --host 0.0.0.0 --port $PORT
 - Build command:
 
 ```bash
-pip install -r requirements.txt
+pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 - Start command:
@@ -39,6 +40,7 @@ python phase6/scripts/run_phase6_scheduled_refresh.py
 - Required environment variables:
   - `GROQ_API_KEY` (secret)
   - `TZ=Asia/Kolkata`
+  - `CUDA_VISIBLE_DEVICES=` (empty; optional)
 
 ## Frontend
 

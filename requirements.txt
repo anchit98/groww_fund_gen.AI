@@ -1,6 +1,7 @@
-chromadb
-sentence-transformers
-requests
-fastapi
-uvicorn
-pydantic
+fastapi==0.115.6
+uvicorn==0.30.6
+pydantic==2.9.2
+requests==2.32.3
+chromadb==0.5.23
+sentence-transformers==3.0.1
+torch==2.5.1+cpu

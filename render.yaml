@@ -3,7 +3,7 @@ services:
     name: rag-bot-backend
     env: python
     plan: starter
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
     startCommand: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
@@ -18,7 +18,7 @@ services:
     env: python
     plan: starter
     schedule: "15 4 * * 1-5"
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
     startCommand: python phase6/scripts/run_phase6_scheduled_refresh.py
     envVars:
       - key: PYTHON_VERSION

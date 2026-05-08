@@ -219,11 +219,29 @@ class QueryEngine:
     def __init__(self) -> None:
         self.policy = json.loads(PHASE3_POLICY_PATH.read_text(encoding="utf-8"))
         self.allowed_re = re.compile(self.policy["accepted_url_regex"])
-        chroma_dir = PROJECT_ROOT / self.policy["chroma"]["persist_directory"]
-        self.client = chromadb.PersistentClient(path=str(chroma_dir))
-        self.collection = self.client.get_collection(self.policy["chroma"]["collection_name"])
-        model_path = PROJECT_ROOT / self.policy["embedding"]["model_path"]
-        self.model = SentenceTransformer(str(model_path))
+        self.client = None
+        self.collection = None
+        self.model = None
+        self.retrieval_ready = False
+        self.retrieval_error: Optional[str] = None
+        try:
+            chroma_dir = PROJECT_ROOT / self.policy["chroma"]["persist_directory"]
+            self.client = chromadb.PersistentClient(path=str(chroma_dir))
+            self.collection = self.client.get_collection(self.policy["chroma"]["collection_name"])
+            model_path = PROJECT_ROOT / self.policy["embedding"]["model_path"]
+            self.model = SentenceTransformer(str(model_path))
+            self.retrieval_ready = True
+        except Exception as e:
+            self.retrieval_error = str(e)
+            print(
+                json.dumps(
+                    {
+                        "event": "retrieval_init_failed",
+                        "error": self.retrieval_error,
+                    },
+                    ensure_ascii=True,
+                )
+            )
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.facts = self._load_facts()
 
@@ -358,6 +376,8 @@ class QueryEngine:
         return None
 
     def _retrieve(self, query: str) -> List[Dict[str, Any]]:
+        if not self.retrieval_ready or self.model is None or self.collection is None:
+            return []
         emb = self.model.encode([query], normalize_embeddings=True).tolist()
         result = self.collection.query(query_embeddings=emb, n_results=int(self.policy["retrieval"]["top_k"]), include=["documents", "metadatas"])
         docs = result.get("documents", [[]])[0]
@@ -645,7 +665,23 @@ def ingest_status_payload() -> Dict[str, Any]:
 def query(req: QueryRequest) -> Dict[str, Any]:
     if ingestion_running():
         return {"response": "Data refresh is currently running. Please try again in a minute.", "citations": [], "status": "ingestion_in_progress"}
-    return get_engine().answer(req.query)
+    try:
+        result = get_engine().answer(req.query)
+        engine_ref = get_engine()
+        if getattr(engine_ref, "retrieval_error", None) and "status" in result:
+            result["status"] = f"{result['status']}_retrieval_degraded"
+        return result
+    except Exception as e:
+        print(
+            json.dumps(
+                {
+                    "event": "query_error",
+                    "error": str(e),
+                },
+                ensure_ascii=True,
+            )
+        )
+        raise HTTPException(status_code=500, detail=f"query_failed: {str(e)}")
 
 
 @app.post("/ingest-url")

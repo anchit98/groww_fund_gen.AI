@@ -242,6 +242,8 @@ class QueryEngine:
                         if self.retrieval_error
                         else f"chroma_retry_failed: {e_retry}"
                     )
+        if self.collection is None:
+            self._attempt_ephemeral_chroma_load()
         model_path = PROJECT_ROOT / self.policy["embedding"]["model_path"]
         try:
             self.model = SentenceTransformer(str(model_path))
@@ -314,6 +316,46 @@ class QueryEngine:
                 else f"chroma_rebuild_failed: {e}"
             )
             return False
+
+    def _attempt_ephemeral_chroma_load(self) -> None:
+        source_path = PROJECT_ROOT / "phase1_4_3" / "reports" / "upserted_chunks.jsonl"
+        if not source_path.exists():
+            self.retrieval_error = (
+                f"{self.retrieval_error}; ephemeral_source_missing: {source_path}"
+                if self.retrieval_error
+                else f"ephemeral_source_missing: {source_path}"
+            )
+            return
+        try:
+            eph_client = chromadb.EphemeralClient()
+            eph_collection = eph_client.get_or_create_collection(self.policy["chroma"]["collection_name"])
+            loaded = self._bulk_load_upserted_chunks(eph_collection, source_path)
+            if loaded <= 0:
+                self.retrieval_error = (
+                    f"{self.retrieval_error}; ephemeral_loaded_zero_rows"
+                    if self.retrieval_error
+                    else "ephemeral_loaded_zero_rows"
+                )
+                return
+            self.client = eph_client
+            self.collection = eph_collection
+            self.retrieval_error = None
+            print(
+                json.dumps(
+                    {
+                        "event": "chroma_ephemeral_load_success",
+                        "loaded_rows": loaded,
+                        "source_path": str(source_path),
+                    },
+                    ensure_ascii=True,
+                )
+            )
+        except Exception as e:
+            self.retrieval_error = (
+                f"{self.retrieval_error}; ephemeral_load_failed: {e}"
+                if self.retrieval_error
+                else f"ephemeral_load_failed: {e}"
+            )
 
     def _bulk_load_upserted_chunks(self, collection: Any, source_path: Path) -> int:
         batch_size = 64

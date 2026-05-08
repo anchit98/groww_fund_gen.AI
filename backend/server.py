@@ -426,21 +426,68 @@ class QueryEngine:
         return res.json()["choices"][0]["message"]["content"].strip()
 
     def answer(self, query: str) -> Dict[str, Any]:
+        trace_id = f"q-{int(time.time() * 1000)}"
+        total_start = time.perf_counter()
+        retrieve_ms = 0.0
+        llm_ms = 0.0
+        mode = "factual"
+        status = "unknown"
         advisory = any(m in query.lower() for m in self.policy.get("advisory_markers", []))
         unsafe_non_factual = self._is_unsafe_non_factual(query)
+        retrieve_start = time.perf_counter()
         contexts = self._retrieve(query)
+        retrieve_ms = (time.perf_counter() - retrieve_start) * 1000
         citation = contexts[0]["source_url"] if contexts else "https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth"
         if advisory or unsafe_non_factual:
+            mode = "refusal"
             if not self.groq_key:
                 text = (
                     "I can only provide factual information about mutual funds and cannot give investment advice. "
                     "I can still help with specific facts like NAV, expense ratio, exit load, riskometer, or benchmark index. "
                     "Ask me a factual question about a fund, and I will answer from available data."
                 )
-                return {"response": text, "citations": [], "status": "safety_refusal_no_llm"}
+                status = "safety_refusal_no_llm"
+                result = {"response": text, "citations": [], "status": status}
+                total_ms = (time.perf_counter() - total_start) * 1000
+                print(
+                    json.dumps(
+                        {
+                            "event": "query_timing",
+                            "trace_id": trace_id,
+                            "mode": mode,
+                            "status": status,
+                            "retrieve_ms": round(retrieve_ms, 1),
+                            "llm_ms": round(llm_ms, 1),
+                            "total_ms": round(total_ms, 1),
+                            "contexts": len(contexts),
+                        },
+                        ensure_ascii=True,
+                    )
+                )
+                return result
+            llm_start = time.perf_counter()
             llm_text = enforce_two_sentences(self._call_groq_non_factual(query))
+            llm_ms = (time.perf_counter() - llm_start) * 1000
             llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
-            return {"response": llm_text, "citations": [], "status": "safety_refusal_llm"}
+            status = "safety_refusal_llm"
+            result = {"response": llm_text, "citations": [], "status": status}
+            total_ms = (time.perf_counter() - total_start) * 1000
+            print(
+                json.dumps(
+                    {
+                        "event": "query_timing",
+                        "trace_id": trace_id,
+                        "mode": mode,
+                        "status": status,
+                        "retrieve_ms": round(retrieve_ms, 1),
+                        "llm_ms": round(llm_ms, 1),
+                        "total_ms": round(total_ms, 1),
+                        "contexts": len(contexts),
+                    },
+                    ensure_ascii=True,
+                )
+            )
+            return result
 
         scheme = self._extract_scheme(query)
         fields = self._extract_fields(query)
@@ -462,12 +509,51 @@ class QueryEngine:
             contexts = [{"chunk_text": "\n".join(fact_hints), "source_url": citation}]
 
         if not self.groq_key:
-            return {"response": "information unavailable.", "citations": [citation], "status": "no_llm_key"}
+            status = "no_llm_key"
+            result = {"response": "information unavailable.", "citations": [citation], "status": status}
+            total_ms = (time.perf_counter() - total_start) * 1000
+            print(
+                json.dumps(
+                    {
+                        "event": "query_timing",
+                        "trace_id": trace_id,
+                        "mode": mode,
+                        "status": status,
+                        "retrieve_ms": round(retrieve_ms, 1),
+                        "llm_ms": round(llm_ms, 1),
+                        "total_ms": round(total_ms, 1),
+                        "contexts": len(contexts),
+                    },
+                    ensure_ascii=True,
+                )
+            )
+            return result
+        llm_start = time.perf_counter()
         llm_text = self._call_groq(query, contexts, citation, fact_hint=fact_hint or "")
+        llm_ms = (time.perf_counter() - llm_start) * 1000
         llm_text = re.sub(r"https?://\S+", "", llm_text).replace("Citation:", "").strip()
         llm_text = reduce_redundancy(llm_text)
         llm_text = enforce_two_sentences(llm_text)
-        return {"response": llm_text, "citations": [citation], "status": "success_llm"}
+        status = "success_llm"
+        result = {"response": llm_text, "citations": [citation], "status": status}
+        total_ms = (time.perf_counter() - total_start) * 1000
+        print(
+            json.dumps(
+                {
+                    "event": "query_timing",
+                    "trace_id": trace_id,
+                    "mode": mode,
+                    "status": status,
+                    "retrieve_ms": round(retrieve_ms, 1),
+                    "llm_ms": round(llm_ms, 1),
+                    "total_ms": round(total_ms, 1),
+                    "contexts": len(contexts),
+                    "fact_hint_used": bool(fact_hints),
+                },
+                ensure_ascii=True,
+            )
+        )
+        return result
 
 
 app = FastAPI(title="Groww Fund Gyaan Backend")

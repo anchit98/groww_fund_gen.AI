@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Info, Link, Loader2, Send } from 'lucide-react'
+import { Info, Loader2, Send } from 'lucide-react'
 import Logo from './Logo'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001').replace(/\/+$/, '')
@@ -485,23 +485,32 @@ const ChatPanel = ({ isDarkMode, chatTabs, setChatTabs, activeTabId }) => {
           )}
 
           <div className="flex items-center gap-2 bg-white dark:bg-ink-800/80 border border-slate-200 dark:border-ink-700/60 rounded-full pl-2 pr-2 py-2 shadow-sm focus-within:border-teal-accent/60 transition-colors">
-            <button
-              type="button"
-              onClick={() => {
-                const next = !showIngestBox
-                setShowIngestBox(next)
-                if (next) {
-                  refreshIngestedFunds()
-                  refreshIngestionStatus()
-                  refreshScrapeStatus()
-                }
-              }}
-              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-400 text-amber-950 hover:bg-amber-300 transition-colors shadow-sm"
-              aria-label={showIngestBox ? 'Hide ingest URL box' : 'Show ingest URL box'}
-              title={showIngestBox ? 'Hide ingest URL box' : 'Show ingest URL box'}
-            >
-              <Link className="w-3.5 h-3.5" />
-            </button>
+            <div className="relative flex items-center group shrink-0">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 dark:border-ink-700/60 text-slate-600 dark:text-slate-300 hover:border-teal-accent/50 hover:text-slate-800 dark:hover:text-slate-100 transition-colors"
+                aria-label="Show ingested funds"
+                title="Show ingested funds"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+              <div className="pointer-events-none absolute left-0 bottom-[calc(100%+8px)] z-20 w-72 p-3 rounded-xl bg-white dark:bg-ink-900 border border-slate-200 dark:border-ink-700/60 shadow-lg opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto">
+                <p className="text-[12px] font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                  Ingested Funds ({uniqueIngestedFunds.length})
+                </p>
+                {uniqueIngestedFunds.length === 0 ? (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">No funds listed yet.</p>
+                ) : (
+                  <div className="max-h-[112px] overflow-y-auto pr-1 space-y-1.5">
+                    {uniqueIngestedFunds.map((fund) => (
+                      <p key={fund.url} className="text-[11px] text-slate-600 dark:text-slate-300 truncate" title={fund.url}>
+                        {fund.name}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             <input
               type="text"
               value={input}

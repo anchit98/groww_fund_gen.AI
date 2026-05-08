@@ -273,25 +273,55 @@ class QueryEngine:
     def _attempt_chroma_rebuild(self, chroma_dir: Path) -> bool:
         source_path = PROJECT_ROOT / "phase1_4_3" / "reports" / "upserted_chunks.jsonl"
         if not source_path.exists():
+            self.retrieval_error = (
+                f"{self.retrieval_error}; rebuild_source_missing: {source_path}"
+                if self.retrieval_error
+                else f"rebuild_source_missing: {source_path}"
+            )
             return False
-        backup_dir = chroma_dir.with_name(f"{chroma_dir.name}_backup_{int(time.time())}")
+        backup_dir = chroma_dir.with_name(f"{chroma_dir.name}_backup_{int(time.time() * 1000)}")
         try:
             if chroma_dir.exists():
+                if backup_dir.exists():
+                    shutil.rmtree(backup_dir, ignore_errors=True)
                 shutil.move(str(chroma_dir), str(backup_dir))
             chroma_dir.mkdir(parents=True, exist_ok=True)
             rebuilt_client = chromadb.PersistentClient(path=str(chroma_dir))
             rebuilt_collection = rebuilt_client.get_or_create_collection(self.policy["chroma"]["collection_name"])
-            self._bulk_load_upserted_chunks(rebuilt_collection, source_path)
+            loaded = self._bulk_load_upserted_chunks(rebuilt_collection, source_path)
+            if loaded == 0:
+                self.retrieval_error = (
+                    f"{self.retrieval_error}; rebuild_loaded_zero_rows"
+                    if self.retrieval_error
+                    else "rebuild_loaded_zero_rows"
+                )
+                return False
+            print(
+                json.dumps(
+                    {
+                        "event": "chroma_rebuild_success",
+                        "loaded_rows": loaded,
+                        "source_path": str(source_path),
+                    },
+                    ensure_ascii=True,
+                )
+            )
             return True
-        except Exception:
+        except Exception as e:
+            self.retrieval_error = (
+                f"{self.retrieval_error}; chroma_rebuild_failed: {e}"
+                if self.retrieval_error
+                else f"chroma_rebuild_failed: {e}"
+            )
             return False
 
-    def _bulk_load_upserted_chunks(self, collection: Any, source_path: Path) -> None:
+    def _bulk_load_upserted_chunks(self, collection: Any, source_path: Path) -> int:
         batch_size = 64
         ids: List[str] = []
         docs: List[str] = []
         embs: List[List[float]] = []
         metas: List[Dict[str, Any]] = []
+        loaded_rows = 0
 
         def flush() -> None:
             if not ids:
@@ -317,6 +347,7 @@ class QueryEngine:
                 ids.append(chunk_id)
                 docs.append(chunk_text)
                 embs.append(embedding)
+                loaded_rows += 1
                 metas.append(
                     {
                         "source_id": str(row.get("source_id", "") or ""),
@@ -336,6 +367,7 @@ class QueryEngine:
                 if len(ids) >= batch_size:
                     flush()
         flush()
+        return loaded_rows
 
     def _load_facts(self) -> Dict[str, Dict[str, Any]]:
         rows: Dict[str, Dict[str, Any]] = {}
@@ -571,6 +603,8 @@ class QueryEngine:
                             "llm_ms": round(llm_ms, 1),
                             "total_ms": round(total_ms, 1),
                             "contexts": len(contexts),
+                            "retrieval_degraded": bool(self.retrieval_error),
+                            "retrieval_error": (self.retrieval_error or "")[:240],
                         },
                         ensure_ascii=True,
                     )
@@ -612,6 +646,8 @@ class QueryEngine:
                         "llm_ms": round(llm_ms, 1),
                         "total_ms": round(total_ms, 1),
                         "contexts": len(contexts),
+                        "retrieval_degraded": bool(self.retrieval_error),
+                        "retrieval_error": (self.retrieval_error or "")[:240],
                     },
                     ensure_ascii=True,
                 )
@@ -663,6 +699,8 @@ class QueryEngine:
                         "llm_ms": round(llm_ms, 1),
                         "total_ms": round(total_ms, 1),
                         "contexts": len(contexts),
+                        "retrieval_degraded": bool(self.retrieval_error),
+                        "retrieval_error": (self.retrieval_error or "")[:240],
                     },
                     ensure_ascii=True,
                 )
@@ -706,6 +744,8 @@ class QueryEngine:
                     "total_ms": round(total_ms, 1),
                     "contexts": len(contexts),
                     "fact_hint_used": bool(fact_hints),
+                    "retrieval_degraded": bool(self.retrieval_error),
+                    "retrieval_error": (self.retrieval_error or "")[:240],
                 },
                 ensure_ascii=True,
             )
